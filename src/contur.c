@@ -14,14 +14,14 @@ int main() {
         return -1;
     }
 
-    //creeam o alta imagine pentru a o converti in gri
+    //adaugam o alta imagine pentru a o converti in gri
     cv::Mat imagine_gri;
     //convertim imaginea in gri si o atribuim catre imagine_gri
     cv::cvtColor(imagine, imagine_gri, cv::COLOR_BGR2GRAY);
 
-    //creeam o imagine erodata
+    //adaugam o imagine erodata
     cv::Mat imagine_erozata;
-    //creeam un kernel pentru imaginea de eroziune
+    //adaugam un kernel pentru imaginea de eroziune
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3, 3)); // matrice dreptunghiulara de 3x3
     // aplicam eroziunea pe imaginea în nuante de gri
     cv::erode(imagine_gri, imagine_erozata, kernel);
