@@ -1,0 +1,31 @@
+Server is listening on port 8080
+New Admin client connected
+Admin client: cf
+Admin client: cf
+New client:Cristi connected
+client:Cristi: ce faci
+client:Cristi: bine
+New client:PY connected
+client:PY: Salutare fara incetare
+
+Admin client: epa
+client:Cristi: asdf
+Admin client: asdf
+client:PY: 
+
+client:PY: nimic
+
+client:Cristi disconnected.
+client:PY disconnected.
+Admin client: close
+Admin client disconnected.
+Server is listening on port 8080
+New Admin client:admin connected
+Admin client:admin: asdf
+New Client 1:user1 connected
+Client 1:user1: opa
+Admin client:admin: asd
+Client 1:user1: ADG
+Client 1:user1: 4
+Admin client:admin: CLOSE
+Admin client:admin disconnected.
