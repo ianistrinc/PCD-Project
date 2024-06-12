@@ -1,4 +1,4 @@
-#include "/home/ianis/opencv/include/opencv2/opencv.hpp"
+#include "opencv2/opencv.hpp"
 #include <stdio.h>
 
 /*
@@ -10,9 +10,9 @@
 void extrage_contur(const char* imagine_path, cv::Mat& contur, cv::Mat& imagine_originala) {
     //citim imaginea
     imagine_originala = cv::imread(imagine_path, cv::IMREAD_COLOR);
-    //verificam daca path-ul este valabil, daca nu printam erroarea
+    //verificam daca path-ul este valabil, daca nu printam eroarea
     if (imagine_originala.empty()) {
-        printf("Eroare in path-ul file-ului!\n"); // erroare printata
+        printf("Eroare in path-ul file-ului!\n"); // eroare printata
         return;
     }
 
@@ -28,7 +28,7 @@ void extrage_contur(const char* imagine_path, cv::Mat& contur, cv::Mat& imagine_
     // aplicam eroziunea pe imaginea în nuante de gri
     cv::erode(imagine_gri, imagine_erozata, kernel);
 
-    // extragem conturu 
+    // extragem conturul 
     cv::subtract(imagine_gri, imagine_erozata, contur);
 }
 
@@ -43,7 +43,7 @@ void intoarce_obiecte(const cv::Mat& contur, cv::Mat& imagine_originala) {
     std::vector<std::vector<cv::Point>> contours;
     /*
         RETR_EXTERNAL dorim doar contur exterior/cele mai mari
-        CHAIN_APPROX_SIMPLE reduce numarul de puncte stocate, eleminand punctele redundante.
+        CHAIN_APPROX_SIMPLE reduce numarul de puncte stocate, eliminand punctele redundante.
     */
     cv::findContours(contur, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
@@ -67,8 +67,14 @@ void intoarce_obiecte(const cv::Mat& contur, cv::Mat& imagine_originala) {
     imagine_originala = imagine_noua;
 }
 
-int main() {
-    const char* imagine_path = "C:/Users/Darius/Pictures/Screenshots/test.png"; // avem path-ul imagini dorite
+int main(int argc, char* argv[]) {
+    // Verificăm dacă avem numărul corect de argumente
+    if (argc != 2) {
+        printf("Utilizare: %s <cale_imagine>\n", argv[0]);
+        return -1;
+    }
+
+    const char* imagine_path = argv[1]; // Path-ul imaginii primit ca argument
     cv::Mat contur, imagine_originala; // stocam imaginea de contur si imaginea originala
 
     //extragem contur cu ajutorul functiei extrage_contur
