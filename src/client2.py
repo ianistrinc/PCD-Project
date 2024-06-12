@@ -69,8 +69,7 @@ class ClientApp:
                 if not response:
                     raise ConnectionError("Admin closed the connection.")
                 messagebox.showinfo("Server Response", response.decode())
-            else:
-                messagebox.showwarning("Timeout", "No response from server.")
+            
         except Exception as e:
             messagebox.showerror("Connection Error", str(e))
             self.root.quit()

@@ -1,5 +1,7 @@
 #include "opencv2/opencv.hpp"
 #include <stdio.h>
+#include <string>
+#include <filesystem>
 
 /*
     Avem functia extrage_contur care primeste parametrii urmatorii
@@ -90,6 +92,16 @@ int main(int argc, char *argv[])
     {
         // folosim functia intoarce_obiecte pentru a intoarce toate obiectele
         intoarce_obiecte(contur, imagine_originala);
+
+        // Extract the file path and name
+        std::filesystem::path path(imagine_path);
+        std::string new_filename = path.stem().string() + "_rotated" + path.extension().string();
+        std::filesystem::path new_path = path.parent_path() / new_filename;
+
+        // Save the processed image
+        cv::imwrite(new_path.string(), imagine_originala);
+        printf("Saved rotated image to: %s\n", new_path.string().c_str());
+
         // dam display la Imagine
         cv::imshow("Obiecte Rotite", imagine_originala);
         cv::waitKey(0);

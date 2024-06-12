@@ -1,4 +1,6 @@
 #include <opencv2/opencv.hpp>
+#include <string>
+#include <filesystem>
 
 int main(int argc, char **argv)
 {
@@ -35,6 +37,15 @@ int main(int argc, char **argv)
     // Desenarea contururilor pe imaginea originală
     cv::Mat result = src.clone();
     cv::drawContours(result, contours, -1, cv::Scalar(0, 255, 0), 2);
+
+    // Extract the file path and name
+    std::filesystem::path path(argv[1]);
+    std::string new_filename = path.stem().string() + "_canny" + path.extension().string();
+    std::filesystem::path new_path = path.parent_path() / new_filename;
+
+    // Save the processed image
+    cv::imwrite(new_path.string(), result);
+    printf("Saved canny image to: %s\n", new_path.string().c_str());
 
     // Afișarea imaginilor
     cv::imshow("Original", src);

@@ -37,13 +37,12 @@ void closeAllSockets()
     }
 }
 
-void deserializeInput(const char input[], std::string &path, std::string &option)
+bool deserializeInput(const char input[], std::string &path, std::string &option)
 {
     size_t len = strlen(input);
-    if (len < 3)
+    if (len < 4)
     {
-        std::cerr << "Input is too short to contain a valid option." << std::endl;
-        return;
+        return false;
     }
 
     // Option is the last two characters
@@ -51,6 +50,14 @@ void deserializeInput(const char input[], std::string &path, std::string &option
 
     // Path is the rest of the string
     path = std::string(input, len - 3);
+
+    // Check if the option is valid
+    if (option != "-c" && option != "-g" && option != "-r")
+    {
+        return false;
+    }
+
+    return true;
 }
 
 void executeCommand(const std::string &command, const std::string &path)
@@ -108,23 +115,25 @@ void handleClient(int clientSocket, const std::string &clientType)
             else
             {
                 std::string path, option;
-                deserializeInput(buffer, path, option);
-
-                if (option == "-c")
+                if (deserializeInput(buffer, path, option))
                 {
-                    executeCommand("./contur", path);
-                }
-                else if (option == "-g")
-                {
-                    executeCommand("./canny", path);
-                }
-                else if (option == "-r")
-                {
-                    executeCommand("./rotate", path);
+                    if (option == "-c")
+                    {
+                        executeCommand("./contur", path);
+                    }
+                    else if (option == "-g")
+                    {
+                        executeCommand("./canny", path);
+                    }
+                    else if (option == "-r")
+                    {
+                        executeCommand("./rotate", path);
+                    }
                 }
                 else
                 {
-                    std::cerr << "Invalid option received: " << option << std::endl;
+                    std::string errorMessage = "Invalid input. Use format '<image_path> <option>' where option is -c, -g, or -r.\n";
+                    send(clientSocket, errorMessage.c_str(), errorMessage.size(), 0);
                 }
 
                 send(clientSocket, buffer, bytesRead, 0); // Echo back the message

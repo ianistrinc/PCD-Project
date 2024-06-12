@@ -1,4 +1,6 @@
 #include "opencv2/opencv.hpp"
+#include <string>
+#include <filesystem>
 
 int main(int argc, char *argv[])
 {
@@ -39,6 +41,15 @@ int main(int argc, char *argv[])
     cv::Mat contur;
     // scadem imaginea erodata din imaginea gri, acest lucru pune in evidenta conturul din imagine
     cv::subtract(imagine_gri, imagine_erozata, contur);
+
+    // Extract the file path and name
+    std::filesystem::path path(imagine_path);
+    std::string new_filename = path.stem().string() + "_contur" + path.extension().string();
+    std::filesystem::path new_path = path.parent_path() / new_filename;
+
+    // Save the processed image
+    cv::imwrite(new_path.string(), contur);
+    printf("Saved contur image to: %s\n", new_path.string().c_str());
 
     // afisam rezultatele
     cv::imshow("Contur", contur);

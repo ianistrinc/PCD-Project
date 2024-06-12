@@ -116,7 +116,7 @@ int main()
         if (bytesRead > 0)
         {
             buffer[bytesRead] = '\0'; // Null-terminate the received string
-            printf("Received response: %s\n", buffer);
+           
         }
         else if (bytesRead == 0)
         {
