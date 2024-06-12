@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <sstream>
 
 #define PORT 8080
@@ -43,34 +44,114 @@ int main()
     char initMessage[] = "Client 1";
     send(sock, initMessage, strlen(initMessage), 0);
 
+    // Wait for initial server response
+    memset(buffer, 0, sizeof(buffer));
+    int bytesRead = read(sock, buffer, sizeof(buffer) - 1);
+    if (bytesRead > 0)
+    {
+        buffer[bytesRead] = '\0'; // Null-terminate the received string
+        printf("Received response: %s\n", buffer);
+    }
+    else if (bytesRead == 0)
+    {
+        printf("Server closed connection.\n");
+        close(sock);
+        return 0;
+    }
+    else
+    {
+        perror("Read error");
+        close(sock);
+        return -1;
+    }
+
+    fd_set readfds;
+    struct timeval timeout;
+
+    // Print prompt once before the loop
+    printf("Enter message [format: <image_path> <option> or type 'exit' to quit]: ");
+    fflush(stdout);
+
     // Wait for user input
     while (1)
     {
-        printf("Enter message: ");
-        fgets(input, sizeof(input), stdin);
-        input[strcspn(input, "\n")] = 0; // Remove newline character
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        FD_SET(sock, &readfds);
 
-        // Send message
-        send(sock, input, strlen(input), 0);
-        printf("Message sent: %s\n", input);
+        timeout.tv_sec = 1;  // 1 second timeout
+        timeout.tv_usec = 0;
 
-        // Wait for response
-        memset(buffer, 0, sizeof(buffer));
-        int bytesRead = read(sock, buffer, sizeof(buffer) - 1);
-        if (bytesRead > 0)
+        int activity = select(sock + 1, &readfds, NULL, NULL, &timeout);
+
+        if (activity < 0)
         {
-            buffer[bytesRead] = '\0'; // Null-terminate the received string
-            if (strcmp(buffer, "Server is shutting down.\n") == 0)
+            perror("Select error");
+            break;
+        }
+
+        if (FD_ISSET(sock, &readfds))
+        {
+            memset(buffer, 0, sizeof(buffer));
+            bytesRead = read(sock, buffer, sizeof(buffer) - 1);
+            if (bytesRead > 0)
             {
-                printf("%s", buffer);
+                buffer[bytesRead] = '\0'; // Null-terminate the received string
+                if (strcmp(buffer, "Server is shutting down.") == 0)
+                {
+                    printf("%s\n", buffer);
+                    break;
+                }
+                printf("Received response: %s\n", buffer);
+                // Print prompt again after receiving a valid response
+                printf("Enter message [format: <image_path> <option> or type 'exit' to quit]: ");
+                fflush(stdout);
+            }
+            else if (bytesRead == 0)
+            {
+                printf("Server closed connection.\n");
                 break;
             }
-            printf("Received response: %s\n", buffer);
+            else
+            {
+                perror("Read error");
+                break;
+            }
         }
-        else if (bytesRead == 0)
+
+        if (FD_ISSET(STDIN_FILENO, &readfds))
         {
-            printf("Server closed connection.\n");
-            break;
+            fgets(input, sizeof(input), stdin);
+            input[strcspn(input, "\n")] = 0; // Remove newline character
+
+            if (strcmp(input, "exit") == 0)
+            {
+                printf("Exiting...\n");
+                break;
+            }
+
+            // Check if input format is correct
+            std::istringstream iss(input);
+            std::string imagePath, option;
+            iss >> imagePath >> option;
+
+            if (imagePath.empty() || option.empty() || 
+                (option != "-c" && option != "-g" && option != "-r"))
+            {
+                printf("Invalid input. Use format '<image_path> <option>' where option is -c, -g, or -r.\n");
+                // Print prompt again for invalid input
+                printf("Enter message [format: <image_path> <option> or type 'exit' to quit]: ");
+                fflush(stdout);
+                continue;
+            }
+
+            // Send message
+            send(sock, input, strlen(input), 0);
+            printf("Message sent: %s\n", input);
+
+            // Print prompt again after sending a valid message
+       
+            fflush(stdout);
         }
     }
 
