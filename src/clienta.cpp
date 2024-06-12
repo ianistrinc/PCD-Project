@@ -7,14 +7,16 @@
 
 #define PORT 8080
 
-int main() {
+int main()
+{
     int sock = 0;
     struct sockaddr_in servAddr;
     char buffer[1024] = {0};
     char input[1024];
 
     // Create socket
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
         perror("Socket creation error");
         return -1;
     }
@@ -23,13 +25,15 @@ int main() {
     servAddr.sin_port = htons(PORT);
 
     // Convert server address
-    if (inet_pton(AF_INET, "127.0.0.1", &servAddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "127.0.0.1", &servAddr.sin_addr) <= 0)
+    {
         perror("Invalid address");
         return -1;
     }
 
     // Connect to server
-    if (connect(sock, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0) {
+    if (connect(sock, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
+    {
         perror("Connection failed");
         return -1;
     }
@@ -39,12 +43,14 @@ int main() {
     send(sock, initMessage, strlen(initMessage), 0);
 
     // Wait for user input
-    while (1) {
+    while (1)
+    {
         printf("Enter command [close, message]: ");
         fgets(input, sizeof(input), stdin);
-        input[strcspn(input, "\n")] = 0;  // Remove newline character
+        input[strcspn(input, "\n")] = 0; // Remove newline character
 
-        if (strcmp(input, "close") == 0) {
+        if (strcmp(input, "close") == 0)
+        {
             printf("CLOSE\n");
             send(sock, input, strlen(input), 0);
             break;

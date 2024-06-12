@@ -1,15 +1,18 @@
 #include <opencv2/opencv.hpp>
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
     // Verifică dacă calea imaginii este furnizată ca argument
-    if (argc != 2) {
+    if (argc != 2)
+    {
         printf("Utilizare: %s <cale_imagine>\n", argv[0]);
         return -1;
     }
 
     // Încarcă imaginea
     cv::Mat src = cv::imread(argv[1], cv::IMREAD_COLOR);
-    if (src.empty()) {
+    if (src.empty())
+    {
         printf("Nu s-a putut încărca imaginea: %s\n", argv[1]);
         return -1;
     }
