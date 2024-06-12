@@ -7,32 +7,36 @@
 #include <fstream>
 
 #define PORT 8080
-const char* LOCK_FILE = "/tmp/clienta.lock"; // Define the path for the lock file
+const char *LOCK_FILE = "/tmp/clienta.lock"; // Defineste calea pentru fisierul de blocare
 
-void remove_lock_file() {
+// Functie pentru a elimina fisierul de blocare
+void remove_lock_file()
+{
     std::remove(LOCK_FILE);
 }
 
 int main()
 {
-    // Check if lock file exists
+    // Verifica daca fisierul de blocare exista
     std::ifstream lock_file_in(LOCK_FILE);
-    if (lock_file_in.good()) {
-        fprintf(stderr, "Admin client is already running.\n");
+    if (lock_file_in.good())
+    {
+        fprintf(stderr, "Admin client ruleaza deja.\n");
         return 1;
     }
     lock_file_in.close();
 
-    // Create lock file
+    // Creeaza fisierul de blocare
     std::ofstream lock_file_out(LOCK_FILE);
-    if (!lock_file_out) {
-        fprintf(stderr, "Unable to create lock file.\n");
+    if (!lock_file_out)
+    {
+        fprintf(stderr, "Nu se poate crea fisierul de blocare.\n");
         return 1;
     }
-    lock_file_out << getpid(); // Write the current process ID to the lock file
+    lock_file_out << getpid(); // Scrie ID-ul procesului curent in fisierul de blocare
     lock_file_out.close();
 
-    // Ensure the lock file is removed on exit
+    // Asigura eliminarea fisierului de blocare la iesire
     atexit(remove_lock_file);
 
     int sock = 0;
@@ -40,97 +44,97 @@ int main()
     char buffer[1024] = {0};
     char input[1024];
 
-    // Create socket
+    // Creare socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        perror("Socket creation error");
+        perror("Eroare la crearea socket-ului");
         return -1;
     }
 
-    servAddr.sin_family = AF_INET;
-    servAddr.sin_port = htons(PORT);
+    servAddr.sin_family = AF_INET;   // Seteaza familia de adrese la IPv4
+    servAddr.sin_port = htons(PORT); // Seteaza portul
 
-    // Convert server address
+    // Converteste adresa serverului de la text la binar
     if (inet_pton(AF_INET, "127.0.0.1", &servAddr.sin_addr) <= 0)
     {
-        perror("Invalid address");
+        perror("Adresa invalida");
         return -1;
     }
 
-    // Connect to server
+    // Conectare la server
     if (connect(sock, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
     {
-        perror("Connection failed");
+        perror("Conexiune esuata");
         return -1;
     }
 
-    // Send initial identification message
+    // Trimite mesajul initial de identificare
     char initMessage[] = "Admin client";
     send(sock, initMessage, strlen(initMessage), 0);
 
-    // Wait for initial server response
+    // Asteapta raspunsul initial de la server
     memset(buffer, 0, sizeof(buffer));
     int bytesRead = read(sock, buffer, sizeof(buffer) - 1);
     if (bytesRead > 0)
     {
-        buffer[bytesRead] = '\0'; // Null-terminate the received string
-        printf("Received response: %s\n", buffer);
+        buffer[bytesRead] = '\0'; // Termina string-ul primit cu null
+        printf("Raspuns primit: %s\n", buffer);
     }
     else if (bytesRead == 0)
     {
-        printf("Server closed connection.\n");
-        close(sock);
+        printf("Serverul a inchis conexiunea.\n");
+        close(sock); // Inchide socket-ul
         return 0;
     }
     else
     {
-        perror("Read error");
-        close(sock);
+        perror("Eroare la citire");
+        close(sock); // Inchide socket-ul
         return -1;
     }
 
-    // Wait for user input
+    // Asteapta input-ul utilizatorului
     while (1)
     {
-        printf("Enter command [close, message]: ");
+        printf("Introdu comanda [close, message]: ");
         fflush(stdout);
 
-        // Read user input
+        // Citeste input-ul de la utilizator
         fgets(input, sizeof(input), stdin);
-        input[strcspn(input, "\n")] = 0; // Remove newline character
+        input[strcspn(input, "\n")] = 0; // Elimina caracterul de newline
 
         if (strcmp(input, "close") == 0)
         {
             printf("CLOSE\n");
-            send(sock, input, strlen(input), 0);
+            send(sock, input, strlen(input), 0); // Trimite comanda de inchidere
             break;
         }
 
-        // Send message
+        // Trimite mesajul catre server
         send(sock, input, strlen(input), 0);
-        printf("Message sent: %s\n", input);
+        printf("Mesaj trimis: %s\n", input);
 
-        // Wait for response
+        // Asteapta raspunsul de la server
         memset(buffer, 0, sizeof(buffer));
         bytesRead = read(sock, buffer, sizeof(buffer) - 1);
         if (bytesRead > 0)
         {
-            buffer[bytesRead] = '\0'; // Null-terminate the received string
-           
+            buffer[bytesRead] = '\0'; // Termina string-ul primit cu null
+            printf("Raspuns primit: %s\n", buffer);
         }
         else if (bytesRead == 0)
         {
-            printf("Server closed connection.\n");
+            printf("Serverul a inchis conexiunea.\n");
             break;
         }
         else
         {
-            perror("Read error");
+            perror("Eroare la citire");
             break;
         }
     }
 
-    // Close connection
+    // Inchide conexiunea
     close(sock);
     return 0;
 }

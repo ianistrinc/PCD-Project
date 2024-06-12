@@ -26,28 +26,32 @@ class ClientApp:
         self.root.after(1000, self.check_server_connection)
 
     def create_widgets(self):
+        # Creare buton pentru selectarea fisierului
         self.browse_button = tk.Button(self.root, text="Browse", command=self.browse_file, bg='#444444', fg='white')
         self.browse_button.grid(row=0, column=0, padx=10, pady=10, sticky='ew')
 
-        
+        # Creare frame pentru optiuni
         self.option_frame = tk.Frame(self.root, bg='#2e2e2e')
         self.option_frame.grid(row=0, column=1, padx=10, pady=10)
 
+        # Optiune -c
         self.option_c = tk.Radiobutton(self.option_frame, text="-c", variable=self.option, value="-c", bg='#2e2e2e', fg='white', selectcolor='#444444')
         self.option_c.pack(side="left", padx=5)
 
+        # Optiune -g
         self.option_g = tk.Radiobutton(self.option_frame, text="-g", variable=self.option, value="-g", bg='#2e2e2e', fg='white', selectcolor='#444444')
-        self.option_g.pack(side="left", padx=5)
+        self.option_g.pack(side="left", padx5)
 
+        # Optiune -r
         self.option_r = tk.Radiobutton(self.option_frame, text="-r", variable=self.option, value="-r", bg='#2e2e2e', fg='white', selectcolor='#444444')
         self.option_r.pack(side="left", padx=5)
 
+        # Creare buton pentru trimiterea mesajului
         self.send_button = tk.Button(self.root, text="Send", command=self.send_data, bg='#444444', fg='white')
         self.send_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
 
-
-
     def browse_file(self):
+        # Deschide dialogul pentru selectarea fisierului
         self.image_path = filedialog.askopenfilename()
         if self.image_path:
             messagebox.showinfo("Selected File", self.image_path)
@@ -62,7 +66,7 @@ class ClientApp:
             self.sock.sendall(message.encode())
             print(f"Message sent: {message}")
             
-            # Wait for server response
+            # Asteapta raspunsul serverului
             ready = select.select([self.sock], [], [], 2)
             if ready[0]:
                 response = self.sock.recv(1024)
@@ -76,6 +80,7 @@ class ClientApp:
 
     def connect_to_server(self):
         try:
+            # Creare si conectare socket
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((SERVER_IP, PORT))
             self.sock.setblocking(0)

@@ -7,155 +7,159 @@
 #include <sys/select.h>
 #include <sstream>
 
-#define PORT 8080
+#define PORT 8080 // Definește portul pe care serverul va asculta
 
 int main()
 {
     int sock = 0;
     struct sockaddr_in servAddr;
-    char buffer[1024] = {0};
-    char input[1024];
+    char buffer[1024] = {0}; // Buffer pentru a stoca mesajele primite de la server
+    char input[1024];        // Buffer pentru a stoca mesajele introduse de utilizator
 
-    // Create socket
+    // Creare socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
-        perror("Socket creation error");
+        perror("Eroare la crearea socket-ului");
         return -1;
     }
 
-    servAddr.sin_family = AF_INET;
-    servAddr.sin_port = htons(PORT);
+    servAddr.sin_family = AF_INET;   // Setează familia de adrese la IPv4
+    servAddr.sin_port = htons(PORT); // Setează portul
 
-    // Convert server address
+    // Converteste adresa serverului de la text la binar
     if (inet_pton(AF_INET, "127.0.0.1", &servAddr.sin_addr) <= 0)
     {
-        perror("Invalid address");
+        perror("Adresa invalida");
         return -1;
     }
 
-    // Connect to server
+    // Conectare la server
     if (connect(sock, (struct sockaddr *)&servAddr, sizeof(servAddr)) < 0)
     {
-        perror("Connection failed");
+        perror("Conexiune esuata");
         return -1;
     }
 
-    // Send initial identification message
+    // Trimite mesajul initial de identificare catre server
     char initMessage[] = "Client 1";
     send(sock, initMessage, strlen(initMessage), 0);
 
-    // Wait for initial server response
+    // Asteapta raspunsul initial de la server
     memset(buffer, 0, sizeof(buffer));
     int bytesRead = read(sock, buffer, sizeof(buffer) - 1);
     if (bytesRead > 0)
     {
-        buffer[bytesRead] = '\0'; // Null-terminate the received string
-        printf("Received response: %s\n", buffer);
+        buffer[bytesRead] = '\0'; // Termina string-ul primit cu null
+        printf("Raspuns primit: %s\n", buffer);
     }
     else if (bytesRead == 0)
     {
-        printf("Server closed connection.\n");
-        close(sock);
+        printf("Serverul a inchis conexiunea.\n");
+        close(sock); // Inchide socket-ul
         return 0;
     }
     else
     {
-        perror("Read error");
-        close(sock);
+        perror("Eroare la citire");
+        close(sock); // Inchide socket-ul
         return -1;
     }
 
-    fd_set readfds;
-    struct timeval timeout;
+    fd_set readfds;         // Set de descriptori pentru select
+    struct timeval timeout; // Structura pentru timeout
 
-    // Print prompt once before the loop
-    printf("Enter message [format: <image_path> <option> or type 'exit' to quit]: ");
+    // Afiseaza prompt-ul o data inainte de bucla
+    printf("Introdu mesajul [format: <image_path> <option> sau scrie 'exit' pentru a iesi]: ");
     fflush(stdout);
 
-    // Wait for user input
+    // Bucla principala pentru comunicare
     while (1)
     {
-        FD_ZERO(&readfds);
-        FD_SET(STDIN_FILENO, &readfds);
-        FD_SET(sock, &readfds);
+        FD_ZERO(&readfds);              // Curata setul de descriptori
+        FD_SET(STDIN_FILENO, &readfds); // Adauga stdin (intrarea standard) in set
+        FD_SET(sock, &readfds);         // Adauga socket-ul in set
 
-        timeout.tv_sec = 1;  // 1 second timeout
+        timeout.tv_sec = 1; // Timeout de 1 secunda
         timeout.tv_usec = 0;
 
+        // Foloseste select pentru a astepta evenimente pe socket sau stdin
         int activity = select(sock + 1, &readfds, NULL, NULL, &timeout);
 
         if (activity < 0)
         {
-            perror("Select error");
+            perror("Eroare la select");
             break;
         }
 
+        // Daca serverul a trimis un mesaj
         if (FD_ISSET(sock, &readfds))
         {
-            memset(buffer, 0, sizeof(buffer));
-            bytesRead = read(sock, buffer, sizeof(buffer) - 1);
+            memset(buffer, 0, sizeof(buffer));                  // Reseteaza buffer-ul
+            bytesRead = read(sock, buffer, sizeof(buffer) - 1); // Citeste mesajul de la server
             if (bytesRead > 0)
             {
-                buffer[bytesRead] = '\0'; // Null-terminate the received string
+                buffer[bytesRead] = '\0'; // Termina string-ul primit
                 if (strcmp(buffer, "Server is shutting down.") == 0)
                 {
                     printf("%s\n", buffer);
-                    break;
+                    break; // Iese din bucla daca serverul se inchide
                 }
-                printf("Received response: %s\n", buffer);
-                // Print prompt again after receiving a valid response
-                printf("Enter message [format: <image_path> <option> or type 'exit' to quit]: ");
+                printf("Raspuns primit: %s\n", buffer);
+                // Afiseaza prompt-ul din nou dupa ce primeste un raspuns valid
+                printf("Introdu mesajul [format: <image_path> <option> sau scrie 'exit' pentru a iesi]: ");
                 fflush(stdout);
             }
             else if (bytesRead == 0)
             {
-                printf("Server closed connection.\n");
-                break;
+                printf("Serverul a inchis conexiunea.\n");
+                break; // Iese din bucla daca serverul inchide conexiunea
             }
             else
             {
-                perror("Read error");
-                break;
+                perror("Eroare la citire");
+                break; // Iese din bucla daca apare o eroare la citire
             }
         }
 
+        // Daca utilizatorul a introdus un mesaj
         if (FD_ISSET(STDIN_FILENO, &readfds))
         {
-            fgets(input, sizeof(input), stdin);
-            input[strcspn(input, "\n")] = 0; // Remove newline character
+            fgets(input, sizeof(input), stdin); // Citeste input-ul de la utilizator
+            input[strcspn(input, "\n")] = 0;    // Elimina caracterul de newline
 
             if (strcmp(input, "exit") == 0)
             {
-                printf("Exiting...\n");
-                break;
+                printf("Iesire...\n");
+                break; // Iese din bucla daca utilizatorul introduce 'exit'
             }
 
-            // Check if input format is correct
+            // Verifica daca formatul input-ului este corect
             std::istringstream iss(input);
             std::string imagePath, option;
             iss >> imagePath >> option;
 
-            if (imagePath.empty() || option.empty() || 
+            // Verifica daca calea imaginii si optiunea sunt valide
+            if (imagePath.empty() || option.empty() ||
                 (option != "-c" && option != "-g" && option != "-r"))
             {
-                printf("Invalid input. Use format '<image_path> <option>' where option is -c, -g, or -r.\n");
-                // Print prompt again for invalid input
-                printf("Enter message [format: <image_path> <option> or type 'exit' to quit]: ");
+                printf("Input invalid. Folositi formatul '<image_path> <option>' unde option este -c, -g, sau -r.\n");
+                // Afiseaza prompt-ul din nou pentru input invalid
+                printf("Introdu mesajul [format: <image_path> <option> sau scrie 'exit' pentru a iesi]: ");
                 fflush(stdout);
-                continue;
+                continue; // Continua bucla daca input-ul este invalid
             }
 
-            // Send message
+            // Trimite mesajul catre server
             send(sock, input, strlen(input), 0);
-            printf("Message sent: %s\n", input);
+            printf("Mesaj trimis: %s\n", input);
 
-            // Print prompt again after sending a valid message
-       
+            // Afiseaza prompt-ul din nou dupa trimiterea unui mesaj valid
+            printf("Introdu mesajul [format: <image_path> <option> sau scrie 'exit' pentru a iesi]: ");
             fflush(stdout);
         }
     }
 
-    // Close connection
+    // Inchide conexiunea
     close(sock);
     return 0;
 }

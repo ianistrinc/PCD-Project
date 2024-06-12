@@ -18,7 +18,7 @@ int main(int argc, char **argv)
         printf("Nu s-a putut încărca imaginea: %s\n", argv[1]);
         return -1;
     }
-    
+
     // Convertirea imaginii în gri
     cv::Mat gray;
     cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
