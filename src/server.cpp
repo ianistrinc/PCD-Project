@@ -10,6 +10,7 @@
 #include <atomic>
 #include <signal.h>
 #include <cstring> // Include for memset
+#include <sys/wait.h> // Include for waitpid
 
 #define PORT 8080
 
@@ -29,6 +30,39 @@ void closeAllSockets() {
     std::lock_guard<std::mutex> lock(clients_mutex);
     for (const auto& client : clientThreads) {
         close(client.first);
+    }
+}
+
+void deserializeInput(const char input[], std::string& path, std::string& option) {
+    size_t len = strlen(input);
+    if (len < 3) {
+        std::cerr << "Input is too short to contain a valid option." << std::endl;
+        return;
+    }
+
+    // Option is the last two characters
+    option = std::string(input + len - 2);
+
+    // Path is the rest of the string
+    path = std::string(input, len - 3);
+}
+
+void executeCommand(const std::string& command, const std::string& path) {
+    pid_t pid = fork();
+    if (pid == 0) {  // Child process
+        execl(command.c_str(), command.c_str(), path.c_str(), (char*)NULL);
+        perror("execl failed");
+        exit(EXIT_FAILURE);
+    } else if (pid > 0) {  // Parent process
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status)) {
+            std::cout << "Command executed successfully: " << command << std::endl;
+        } else {
+            std::cerr << "Command execution failed: " << command << std::endl;
+        }
+    } else {
+        perror("fork failed");
     }
 }
 
@@ -52,6 +86,19 @@ void handleClient(int clientSocket, const std::string& clientType) {
                 close(serverFd);
                 exit(0);
             } else {
+                std::string path, option;
+                deserializeInput(buffer, path, option);
+
+                if (option == "-c") {
+                    executeCommand("./contur", path);
+                } else if (option == "-g") {
+                    executeCommand("./canny", path);
+                } else if (option == "-r") {
+                    executeCommand("./rotate", path);
+                } else {
+                    std::cerr << "Invalid option received: " << option << std::endl;
+                }
+
                 send(clientSocket, buffer, bytesRead, 0); // Echo back the message
             }
         } else if (bytesRead == 0) {
