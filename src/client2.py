@@ -15,7 +15,7 @@ def handle_client(client_type, username):
 
         while True:
             sockets_list = [sys.stdin, s]
-            read_sockets, write_socket, error_socket = select.select(sockets_list, [], [])
+            read_sockets, _, _ = select.select(sockets_list, [], [])
 
             for socks in read_sockets:
                 if socks == s:
@@ -25,12 +25,13 @@ def handle_client(client_type, username):
                         return
                     print(f"Server: {message.decode()}")
                 else:
-                    message = sys.stdin.readline()
-                    s.send(message.encode())
-                    if message.strip() == "shutdown":
-                        print("You do not have permission to shut down the server.")
-                    if message.strip() == "exit":
+                    message = sys.stdin.readline().strip()
+                    if message == "exit":
                         return
+                    if " " in message and (message.endswith(" -c") or message.endswith(" -g") or message.endswith(" -r")):
+                        s.send(message.encode())
+                    else:
+                        print("Invalid option. Use format '<image_path> <option>' where option is -c, -g, or -r.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
