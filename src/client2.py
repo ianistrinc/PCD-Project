@@ -40,7 +40,7 @@ class ClientApp:
 
         # Optiune -g
         self.option_g = tk.Radiobutton(self.option_frame, text="-g", variable=self.option, value="-g", bg='#2e2e2e', fg='white', selectcolor='#444444')
-        self.option_g.pack(side="left", padx5)
+        self.option_g.pack(side="left", padx=5)
 
         # Optiune -r
         self.option_r = tk.Radiobutton(self.option_frame, text="-r", variable=self.option, value="-r", bg='#2e2e2e', fg='white', selectcolor='#444444')
